@@ -24,6 +24,10 @@ function appendLog(logs: string[], message: string): void {
   logs.push(`[${new Date().toISOString()}] ${message}`);
 }
 
+function isFUser(authorName: string): boolean {
+  return authorName.trim().toLowerCase().startsWith('f');
+}
+
 export async function collectCommits(daysAgoOverride?: number): Promise<CollectCommitsResult> {
   const startedAt = new Date().toISOString();
   const appConfig = getAppConfig();
@@ -39,6 +43,7 @@ export async function collectCommits(daysAgoOverride?: number): Promise<CollectC
   const logs: string[] = [];
   const commits: Array<CommitResult & { timestamp: number }> = [];
   const seen = new Set<string>();
+  let ignoredCommits = 0;
   const headers = {
     Authorization: `Basic ${rootConfig.azureDevops.base64AuthInfo.trim()}`,
     Accept: 'application/json'
@@ -98,6 +103,12 @@ export async function collectCommits(daysAgoOverride?: number): Promise<CollectC
         }
 
         for (const commit of currentCommits) {
+          const commitAuthorName = String(commit.author?.name || '').trim();
+          if (!isFUser(commitAuthorName)) {
+            ignoredCommits += 1;
+            continue;
+          }
+
           const uniqueKey = `${commit.commitId}|${branchName}|${authorEmail.toLowerCase()}`;
           if (seen.has(uniqueKey)) {
             continue;
@@ -107,7 +118,6 @@ export async function collectCommits(daysAgoOverride?: number): Promise<CollectC
           const parsedDate = commit.author?.date ? new Date(commit.author.date) : null;
           const safeDate = parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
           const commitAuthorEmail = String(commit.author?.email || authorEmail).trim();
-          const commitAuthorName = String(commit.author?.name || '').trim() || commitAuthorEmail;
 
           commits.push({
             id: `${commit.commitId || 'row'}-${branchName}-${commits.length}`,
@@ -127,6 +137,9 @@ export async function collectCommits(daysAgoOverride?: number): Promise<CollectC
   }
 
   commits.sort((left, right) => right.timestamp - left.timestamp);
+  if (ignoredCommits > 0) {
+    appendLog(logs, `${ignoredCommits} commit(s) descartado(s): nome do autor nao inicia com "f".`);
+  }
   appendLog(logs, `Coleta concluida com ${commits.length} commit(s).`);
   const finishedAt = new Date().toISOString();
   appendLog(logs, 'Coleta finalizada.');
