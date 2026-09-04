@@ -13,10 +13,41 @@ function resolveDaysAgo(request: Request): number | undefined {
   return Number.isNaN(parsed) ? undefined : parsed;
 }
 
+function isStreamRequest(request: Request): boolean {
+  return request.query.stream === 'true';
+}
+
+function sendServerSentEvent(response: Response, event: string, data: unknown): void {
+  response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
 export async function listCommitsController(request: Request, response: Response): Promise<void> {
-  const data = await collectCommits(resolveDaysAgo(request));
-  await saveLastCommitsResult(data);
-  response.json(data);
+  if (!isStreamRequest(request)) {
+    const data = await collectCommits(resolveDaysAgo(request));
+    await saveLastCommitsResult(data);
+    response.json(data);
+    return;
+  }
+
+  response.status(200);
+  response.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  response.setHeader('Cache-Control', 'no-cache, no-transform');
+  response.setHeader('Connection', 'keep-alive');
+  response.flushHeaders();
+
+  try {
+    const data = await collectCommits(resolveDaysAgo(request), (line) => {
+      sendServerSentEvent(response, 'log', { line });
+    });
+    await saveLastCommitsResult(data);
+    sendServerSentEvent(response, 'result', data);
+  } catch (error) {
+    sendServerSentEvent(response, 'error', {
+      message: error instanceof Error ? error.message : 'Falha interna no servidor.'
+    });
+  } finally {
+    response.end();
+  }
 }
 
 export async function lastCommitsController(_request: Request, response: Response): Promise<void> {
