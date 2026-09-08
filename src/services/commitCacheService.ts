@@ -1,13 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { existsSync } from 'node:fs';
 import { getAppConfig } from '../config/appConfig';
 import { CollectCommitsResult } from './commitService';
 
-let lastCommitsResult: CollectCommitsResult | null = null;
-
 export async function saveLastCommitsResult(result: CollectCommitsResult): Promise<void> {
-  lastCommitsResult = result;
   const { lastCommitsCacheFile } = getAppConfig();
 
   await mkdir(path.dirname(lastCommitsCacheFile), { recursive: true });
@@ -15,18 +11,16 @@ export async function saveLastCommitsResult(result: CollectCommitsResult): Promi
 }
 
 export async function getLastCommitsResult(): Promise<CollectCommitsResult | null> {
-  if (lastCommitsResult) {
-    return lastCommitsResult;
-  }
-
   const { lastCommitsCacheFile } = getAppConfig();
 
-  if (!existsSync(lastCommitsCacheFile)) {
-    return null;
-  }
+  try {
+    const content = await readFile(lastCommitsCacheFile, 'utf-8');
+    return JSON.parse(content) as CollectCommitsResult;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return null;
+    }
 
-  const content = await readFile(lastCommitsCacheFile, 'utf-8');
-  const parsed = JSON.parse(content) as CollectCommitsResult;
-  lastCommitsResult = parsed;
-  return lastCommitsResult;
+    throw error;
+  }
 }
