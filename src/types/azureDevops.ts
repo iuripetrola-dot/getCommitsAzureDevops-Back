@@ -49,6 +49,27 @@ export interface AzureGitCommit {
   };
 }
 
+export interface AzureIdentityRef {
+  displayName?: string;
+  uniqueName?: string;
+}
+
+export interface AzureGitPullRequest {
+  pullRequestId?: number;
+  title?: string;
+  status?: string;
+  creationDate?: string;
+  sourceRefName?: string;
+  targetRefName?: string;
+  createdBy?: AzureIdentityRef;
+  reviewers?: AzureIdentityRef[];
+  _links?: {
+    web?: {
+      href?: string;
+    };
+  };
+}
+
 export interface AzureListResponse<T> {
   count?: number;
   value?: T[];
@@ -64,4 +85,19 @@ export interface CommitResult {
   message: string;
   commitId: string;
   date: string | null;
+}
+
+export interface PullRequestResult {
+  id: number;
+  title: string;
+  status: string;
+  repository: string;
+  project: string;
+  author: string;
+  email: string;
+  sourceBranch: string;
+  targetBranch: string;
+  reviewers: string[];
+  createdAt: string | null;
+  url: string;
 }
