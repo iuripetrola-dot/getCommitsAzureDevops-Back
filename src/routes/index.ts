@@ -3,6 +3,7 @@ import { healthController } from '../controllers/healthController';
 import { configController } from '../controllers/configController';
 import { exportCommitsController, lastCommitsController, listCommitsController } from '../controllers/commitsController';
 import { openPullRequestsController } from '../controllers/pullRequestsController';
+import { branchLockController } from '../controllers/branchesController';
 
 export const router = Router();
 
@@ -12,3 +13,4 @@ router.get('/commits', listCommitsController);
 router.get('/commits/last', lastCommitsController);
 router.get('/commits/export', exportCommitsController);
 router.get('/pull-requests/open', openPullRequestsController);
+router.patch('/branches/lock', branchLockController);

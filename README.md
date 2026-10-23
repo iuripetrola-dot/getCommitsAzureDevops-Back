@@ -62,3 +62,13 @@ Se `caCertPath` estiver vazio, o backend continua usando `insecureTls` como fall
 - `GET /api/config`
 - `GET /api/commits`
 - `GET /api/commits/export`
+## Bloquear ou desbloquear branch
+
+```bash
+curl -X PATCH http://localhost:8080/api/branches/lock \
+  -H 'Content-Type: application/json' \
+  -d '{"project":"MeuProjeto","repository":"MeuRepositorio","branch":"main","locked":true}'
+```
+
+Use `locked: false` para desbloquear. Por seguranca, o projeto e repositorio precisam existir em
+`azureDevops.repositories` no arquivo de configuracao.

@@ -39,6 +39,21 @@ export interface AzureBranchRef {
   name: string;
 }
 
+export interface AzureBranchLockRef {
+  name?: string;
+  objectId?: string;
+  isLocked?: boolean;
+  isLockedBy?: AzureIdentityRef;
+}
+
+export interface BranchLockResult {
+  project: string;
+  repository: string;
+  branch: string;
+  locked: boolean;
+  lockedBy: string;
+}
+
 export interface AzureGitCommit {
   commitId?: string;
   comment?: string;
